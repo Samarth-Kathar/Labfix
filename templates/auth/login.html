@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — LabFix Smart Lab System</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <!-- Left Hero Side -->
+    <div class="auth-hero-side">
+      <div class="auth-brand">
+        <div class="auth-brand-icon">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="auth-brand-text">LabFix</div>
+      </div>
+
+      <div class="auth-hero-content">
+        <div class="hero-tag">
+          <i class="fa-solid fa-building-columns"></i> Nutan Maharashtra Institute of Engg. & Tech.
+        </div>
+        <h1 class="auth-hero-title">
+          Smart Computer Lab Infrastructure, <span>Real-Time Repairs.</span>
+        </h1>
+        <p class="auth-hero-desc">
+          Official computer laboratory and workstation maintenance system for NMIET Pune (PCET & NMVPM). Empowering faculty fault reporting, automated technician dispatch, and institutional HOD oversight.
+        </p>
+      </div>
+
+      <div class="auth-hero-footer">
+        <div><i class="fa-solid fa-building-columns me-1"></i> 3 Wings & 9 Floors</div>
+        <div><i class="fa-solid fa-desktop me-1"></i> 360 Managed PCs</div>
+        <div><i class="fa-solid fa-shield-halved me-1"></i> Enterprise Role Access</div>
+      </div>
+    </div>
+
+    <!-- Right Form Side -->
+    <div class="auth-form-side">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h2 class="auth-title">Welcome Back</h2>
+          <p class="auth-subtitle">Choose your role and enter your credentials to proceed.</p>
+        </div>
+
+        <!-- Role Selector Tabs -->
+        <div class="role-tabs" id="role-selector-tabs">
+          <div class="role-tab {{ 'active' if selected_role == 'hod' or not selected_role else '' }}" data-role="hod">
+            <i class="fa-solid fa-user-shield me-1"></i> HOD
+          </div>
+          <div class="role-tab {{ 'active' if selected_role == 'faculty' else '' }}" data-role="faculty">
+            <i class="fa-solid fa-chalkboard-user me-1"></i> Faculty
+          </div>
+          <div class="role-tab {{ 'active' if selected_role == 'technician' else '' }}" data-role="technician">
+            <i class="fa-solid fa-wrench me-1"></i> Technician
+          </div>
+        </div>
+
+        <form action="{{ url_for('auth.login', next=request.args.get('next')) }}" method="POST" id="login-form">
+          <input type="hidden" name="role" id="role-input" value="{{ selected_role or 'hod' }}">
+
+          <!-- Username / Email -->
+          <div class="form-group">
+            <label class="form-label" for="username">Username or College Email</label>
+            <div style="position: relative;">
+              <input type="text" class="form-control ps-4" id="username" name="username" value="{{ username or '' }}" placeholder="e.g. hod, faculty, or tech" required autofocus>
+              <i class="fa-regular fa-user" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--slate-400);"></i>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label class="form-label mb-0" for="password">Password</label>
+              <a href="#" onclick="openModal('forgot-password-modal'); return false;" style="font-size: 0.8rem; font-weight: 600;">Forgot Password?</a>
+            </div>
+            <div class="password-input-group">
+              <input type="password" class="form-control ps-4 pe-5" id="password" name="password" placeholder="••••••••••••" required>
+              <i class="fa-solid fa-lock" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--slate-400);"></i>
+              <button type="button" class="password-toggle-btn" id="toggle-password" title="Show/Hide Password">
+                <i class="fa-regular fa-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember Me Checkbox -->
+          <div class="d-flex align-items-center justify-content-between mb-4">
+            <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; color: var(--text-muted); cursor: pointer;">
+              <input type="checkbox" name="remember" value="1" style="accent-color: var(--primary);">
+              <span>Remember this device</span>
+            </label>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary w-100 btn-lg" id="submit-btn">
+            <span>Sign In to Dashboard</span>
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+
+        <!-- Demo Accounts Quick Fill Panel -->
+        <div class="demo-accounts-panel">
+          <div class="demo-title">
+            <span>One-Click Demo Credentials</span>
+            <span class="badge badge-primary">Demo Ready</span>
+          </div>
+          <div class="demo-buttons-row">
+            <button type="button" class="demo-btn" onclick="fillCredentials('hod', 'Password@123', 'hod')">
+              <i class="fa-solid fa-user-shield me-1"></i> HOD
+            </button>
+            <button type="button" class="demo-btn" onclick="fillCredentials('faculty', 'Password@123', 'faculty')">
+              <i class="fa-solid fa-chalkboard-user me-1"></i> Faculty
+            </button>
+            <button type="button" class="demo-btn" onclick="fillCredentials('tech', 'Password@123', 'technician')">
+              <i class="fa-solid fa-wrench me-1"></i> Technician
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div class="modal-overlay" id="forgot-password-modal">
+    <div class="modal-card">
+      <div class="card-header">
+        <h4 class="card-title"><i class="fa-solid fa-key text-primary me-2"></i> Password Recovery</h4>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('forgot-password-modal')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="card-body">
+        <p class="mb-3">
+          For security in institutional lab environments, password resets are handled via the Department Systems Administrator or HOD office.
+        </p>
+        <div class="card p-3 mb-3" style="background: var(--bg-surface-secondary);">
+          <div class="fw-bold mb-1"><i class="fa-solid fa-envelope me-2 text-primary"></i> IT Support Desk</div>
+          <div class="text-muted" style="font-size: 0.85rem;">it-admin@labfix.edu | Ext: 4402</div>
+          <div class="text-muted" style="font-size: 0.85rem;">Office: Central Tech Wing B, Room 104</div>
+        </div>
+        <p class="text-muted" style="font-size: 0.825rem;">
+          Default demo password for all accounts is: <code style="color: var(--primary); font-weight: bold;">Password@123</code>
+        </p>
+      </div>
+      <div class="card-footer text-end">
+        <button class="btn btn-secondary" onclick="closeModal('forgot-password-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script>
+    // Role selection tabs
+    const roleTabs = document.querySelectorAll('.role-tab');
+    const roleInput = document.getElementById('role-input');
+
+    roleTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        roleTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        roleInput.value = tab.getAttribute('data-role');
+      });
+    });
+
+    // Password toggle
+    const toggleBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+    toggleBtn.addEventListener('click', () => {
+      const isPass = passwordInput.getAttribute('type') === 'password';
+      passwordInput.setAttribute('type', isPass ? 'text' : 'password');
+      toggleBtn.innerHTML = isPass ? '<i class="fa-regular fa-eye-slash"></i>' : '<i class="fa-regular fa-eye"></i>';
+    });
+
+    // Fill credentials helper
+    function fillCredentials(user, pass, role) {
+      document.getElementById('username').value = user;
+      document.getElementById('password').value = pass;
+      roleInput.value = role;
+      roleTabs.forEach(tab => {
+        if (tab.getAttribute('data-role') === role) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      showToast('Credentials Filled', `Loaded ${role.toUpperCase()} account details. Click Sign In!`, 'info');
+    }
+
+    // Flash messages toast
+    document.addEventListener('DOMContentLoaded', () => {
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            showToast('{{ category|capitalize }}', '{{ message }}', '{{ category }}');
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    });
+  </script>
+</body>
+</html>

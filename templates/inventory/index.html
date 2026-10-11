@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Computer Inventory Management — LabFix{% endblock %}
+{% block breadcrumb %}Hardware Inventory Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Computer Asset Inventory</h1>
+    <p class="page-subtitle">Centralized asset tracking across 18 computing laboratories and 360 workstations</p>
+  </div>
+  <a href="{{ url_for('inventory.add') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus-circle me-1"></i> Add New Computer
+  </a>
+</div>
+
+<!-- Filters Bar -->
+<div class="filter-bar">
+  <form method="GET" action="{{ url_for('inventory.index') }}" class="d-flex align-items-center gap-2 flex-wrap w-100">
+    <div style="flex: 1; min-width: 220px;">
+      <input type="text" name="search" class="form-control" placeholder="Search Computer ID, Serial, Brand, Model, or PC#..." value="{{ current_search }}">
+    </div>
+
+    <div style="min-width: 140px;">
+      <select name="status" class="form-select">
+        <option value="">All Statuses</option>
+        <option value="Working" {{ 'selected' if current_status == 'Working' else '' }}>Working</option>
+        <option value="Fault Reported" {{ 'selected' if current_status == 'Fault Reported' else '' }}>Fault Reported</option>
+        <option value="Under Repair" {{ 'selected' if current_status == 'Under Repair' else '' }}>Under Repair</option>
+        <option value="Repaired" {{ 'selected' if current_status == 'Repaired' else '' }}>Repaired</option>
+        <option value="Decommissioned" {{ 'selected' if current_status == 'Decommissioned' else '' }}>Decommissioned</option>
+      </select>
+    </div>
+
+    <div style="min-width: 130px;">
+      <select name="wing" class="form-select">
+        <option value="">All Wings</option>
+        {% for w in wings %}
+          <option value="{{ w }}" {{ 'selected' if current_wing == w else '' }}>{{ w }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="min-width: 140px;">
+      <select name="sort_by" class="form-select">
+        <option value="id" {{ 'selected' if sort_by == 'id' else '' }}>Sort: Default ID</option>
+        <option value="pc_number" {{ 'selected' if sort_by == 'pc_number' else '' }}>Sort: PC Number</option>
+        <option value="brand" {{ 'selected' if sort_by == 'brand' else '' }}>Sort: Brand</option>
+        <option value="status" {{ 'selected' if sort_by == 'status' else '' }}>Sort: Status</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+      <i class="fa-solid fa-filter"></i> Filter
+    </button>
+    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline" title="Reset Filters">
+      <i class="fa-solid fa-rotate-left"></i>
+    </a>
+  </form>
+</div>
+
+<!-- Inventory Table Card -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-desktop text-primary me-2"></i> Workstation Directory
+    </div>
+    <span class="badge badge-secondary">{{ computers|length }} Workstations Listed</span>
+  </div>
+
+  <div class="card-body p-0">
+    {% if computers %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Computer ID</th>
+              <th>PC Number</th>
+              <th>Location</th>
+              <th>Brand & Model</th>
+              <th>Serial Number</th>
+              <th>Operational Status</th>
+              <th>Last Maintenance</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in computers %}
+              <tr>
+                <td class="fw-bold" style="font-family: monospace; color: var(--primary);">
+                  {{ c.computer_id_code }}
+                </td>
+                <td class="fw-semibold text-main">
+                  {{ c.pc_number }}
+                </td>
+                <td>
+                  <div class="fw-medium text-main">{{ c.lab_code }}</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">{{ c.wing_name }} • {{ c.floor_name }}</div>
+                </td>
+                <td>
+                  <div class="fw-medium">{{ c.brand }} {{ c.model }}</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">{{ c.processor }}</div>
+                </td>
+                <td style="font-family: monospace; font-size: 0.825rem;">
+                  {{ c.serial_number }}
+                </td>
+                <td>
+                  <span class="badge {{ c.operational_status|status_badge_class }}">
+                    {{ c.operational_status }}
+                  </span>
+                </td>
+                <td class="text-muted" style="font-size: 0.8rem;">
+                  {{ c.last_maintenance_date or 'None recorded' }}
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-1">
+                    <a href="{{ url_for('inventory.detail', computer_id=c.id) }}" class="btn btn-outline btn-sm" title="View Specifications & History">
+                      <i class="fa-solid fa-eye"></i> Details
+                    </a>
+                    {% if c.operational_status != 'Decommissioned' %}
+                      <a href="{{ url_for('inventory.replace', computer_id=c.id) }}" class="btn btn-secondary btn-sm" title="Replace Hardware">
+                        <i class="fa-solid fa-repeat"></i> Replace
+                      </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="fa-solid fa-desktop mb-2" style="font-size: 2.5rem; opacity: 0.5;"></i>
+        <h4>No Computers Found</h4>
+        <p>No inventory records match your search criteria.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

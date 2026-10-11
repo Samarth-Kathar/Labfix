@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}Manage Complaint {{ complaint.complaint_code }} — LabFix{% endblock %}
+{% block breadcrumb %}Complaint Action Workspace{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="{{ url_for('technician.dashboard') }}" class="text-muted" style="font-size: 0.9rem;">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to Queue
+      </a>
+    </div>
+    <h1 class="page-title">Complaint {{ complaint.complaint_code }}</h1>
+    <p class="page-subtitle">{{ complaint.location_breadcrumb }}</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge {{ complaint.priority|priority_badge_class }}" style="font-size: 0.9rem; padding: 0.4rem 0.85rem;">
+      {{ complaint.priority }} Priority
+    </span>
+    <span class="badge {{ complaint.status|status_badge_class }}" style="font-size: 0.9rem; padding: 0.4rem 0.85rem;">
+      {{ complaint.status }}
+    </span>
+  </div>
+</div>
+
+<!-- Workflow Action Banner -->
+<div class="card mb-4" style="background: var(--bg-surface-secondary); border-left: 4px solid var(--primary);">
+  <div class="card-body p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div>
+      <div class="fw-bold" style="font-size: 0.95rem;">Repair Lifecycle Status</div>
+      <div class="text-muted" style="font-size: 0.825rem;">
+        {% if complaint.status == 'Pending' %}
+          Ticket is currently unclaimed in the incoming queue. Claim it to begin servicing.
+        {% elif complaint.status == 'Accepted' %}
+          Assigned to {{ complaint.technician_name }}. Ready to begin diagnosis & hardware bench testing.
+        {% elif complaint.status == 'In Progress' %}
+          Active hardware repair in progress. Enter resolution diagnostics below once verified.
+        {% elif complaint.status == 'Resolved' %}
+          Repairs completed and certified in maintenance records.
+        {% endif %}
+      </div>
+    </div>
+
+    <div>
+      {% if complaint.status == 'Pending' %}
+        <form action="{{ url_for('technician.accept_complaint', complaint_id=complaint.id) }}" method="POST">
+          <button type="submit" class="btn btn-primary">
+            <i class="fa-solid fa-hand-holding-hand me-1"></i> Claim & Accept Complaint
+          </button>
+        </form>
+      {% elif complaint.status == 'Accepted' and complaint.assigned_technician_id == user.id %}
+        <form action="{{ url_for('technician.start_repair', complaint_id=complaint.id) }}" method="POST">
+          <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #06b6d4, #3a86ff);">
+            <i class="fa-solid fa-play me-1"></i> Start Repair (In Progress)
+          </button>
+        </form>
+      {% elif complaint.status == 'In Progress' and complaint.assigned_technician_id == user.id %}
+        <button class="btn btn-success" onclick="openModal('resolution-modal')">
+          <i class="fa-solid fa-square-check me-1"></i> Enter Resolution & Mark Resolved
+        </button>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.5rem;">
+  <!-- Left Side: Problem Diagnostics & Resolution Form -->
+  <div class="d-flex flex-column gap-3">
+    <!-- Complaint Details -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-circle-exclamation text-danger me-2"></i> Problem Diagnostics</h3>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="text-muted" style="font-size: 0.775rem; font-weight: 700; text-transform: uppercase;">Problem Category</div>
+          <div class="fw-bold text-main" style="font-size: 1.1rem;">{{ complaint.problem_category }}</div>
+        </div>
+
+        <div class="mb-3">
+          <div class="text-muted" style="font-size: 0.775rem; font-weight: 700; text-transform: uppercase;">Reported Symptom & Notes</div>
+          <div class="p-3 rounded border" style="background: var(--bg-surface-secondary); line-height: 1.5; font-size: 0.925rem;">
+            {{ complaint.description }}
+          </div>
+        </div>
+
+        {% if complaint.attachment_filename %}
+          <div class="mb-3">
+            <div class="text-muted mb-1" style="font-size: 0.775rem; font-weight: 700; text-transform: uppercase;">Attachment</div>
+            <a href="{{ url_for('uploaded_file', filename=complaint.attachment_filename) }}" target="_blank">
+              <img src="{{ url_for('uploaded_file', filename=complaint.attachment_filename) }}" alt="Issue Screenshot" style="max-height: 240px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            </a>
+          </div>
+        {% endif %}
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.85rem;" class="pt-2 border-top">
+          <div>
+            <span class="text-muted">Reported By:</span>
+            <div class="fw-semibold text-main">{{ complaint.faculty_name }}</div>
+          </div>
+          <div>
+            <span class="text-muted">Reported Timestamp:</span>
+            <div class="text-main">{{ complaint.reported_at }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Resolution Form (Inline if In Progress) -->
+    {% if complaint.status == 'In Progress' and complaint.assigned_technician_id == user.id %}
+      <div class="card" id="resolve-section" style="border: 2px solid var(--success);">
+        <div class="card-header" style="background: rgba(16, 185, 129, 0.08);">
+          <h3 class="card-title text-success">
+            <i class="fa-solid fa-square-check me-2"></i> Technician Resolution Form
+          </h3>
+          <span class="badge badge-success">Active Session</span>
+        </div>
+        <div class="card-body">
+          <form action="{{ url_for('technician.resolve_complaint', complaint_id=complaint.id) }}" method="POST" id="inline-resolve-form" onsubmit="return confirmResolution();">
+            <div class="form-group">
+              <label class="form-label" for="res-diag">Diagnosis *</label>
+              <input type="text" class="form-control" id="res-diag" name="diagnosis" placeholder="e.g. Defective RAM stick in DIMM slot 2, Corrupt bootloader, Loose SATA cable" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="res-action">Action Taken *</label>
+              <input type="text" class="form-control" id="res-action" name="action_taken" placeholder="e.g. Swapped RAM module, reseated cabling, executed memtest diagnostics" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label class="form-label" for="res-parts">Parts Replaced (if any)</label>
+                <input type="text" class="form-control" id="res-parts" name="parts_replaced" placeholder="e.g. 16GB DDR4 RAM stick (or None)">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="res-status">Workstation Operational Status After Repair *</label>
+                <select class="form-select" id="res-status" name="operational_status">
+                  <option value="Working" selected>Working (Fully Tested & Returned to Lab)</option>
+                  <option value="Repaired">Repaired (Certified, Awaiting Verification)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="res-sol">Detailed Solution Description *</label>
+              <textarea class="form-control" id="res-sol" name="solution_description" rows="3" placeholder="Explain the root cause and repair solution in detail..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="res-notes">Technician Notes & Bench-Test Observations</label>
+              <textarea class="form-control" id="res-notes" name="repair_notes" rows="2" placeholder="e.g. System temperature stable at 38°C after 30 min burn-in test."></textarea>
+            </div>
+
+            <div class="p-3 mb-3 rounded" style="background: var(--bg-surface-secondary); font-size: 0.85rem;">
+              <label class="d-flex align-items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="confirm-resolution-check" required style="accent-color: var(--success);">
+                <span>I confirm that the workstation hardware has been physically verified and bench-tested according to safety protocols.</span>
+              </label>
+            </div>
+
+            <div class="text-end">
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="fa-solid fa-circle-check me-1"></i> Certify & Mark Complaint Resolved
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Resolved Maintenance Record (If Already Resolved) -->
+    {% if maintenance %}
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <div class="card-header">
+          <h3 class="card-title text-success"><i class="fa-solid fa-certificate me-2"></i> Certified Maintenance Record</h3>
+          <span class="badge badge-success">{{ maintenance.verification_status }}</span>
+        </div>
+        <div class="card-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <span class="text-muted" style="font-size: 0.775rem;">Diagnosis:</span>
+              <div class="fw-semibold text-main">{{ maintenance.diagnosis }}</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.775rem;">Action Taken:</span>
+              <div class="fw-semibold text-main">{{ maintenance.action_taken }}</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.775rem;">Parts Replaced:</span>
+              <div>{{ maintenance.parts_replaced or 'None' }}</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.775rem;">Completed At:</span>
+              <div>{{ maintenance.completed_at }}</div>
+            </div>
+          </div>
+          <div>
+            <span class="text-muted" style="font-size: 0.775rem;">Solution Description:</span>
+            <div class="p-3 rounded mt-1" style="background: var(--bg-surface-secondary);">
+              {{ maintenance.solution_description }}
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Side: Workstation Specs & Prior History -->
+  <div class="d-flex flex-column gap-3">
+    <!-- Workstation Specifications Card -->
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title"><i class="fa-solid fa-desktop text-primary me-2"></i> Workstation Profile</h4>
+        <span class="badge badge-primary">{{ computer.pc_number }}</span>
+      </div>
+      <div class="card-body" style="font-size: 0.875rem;">
+        <div class="mb-2">
+          <div class="text-muted" style="font-size: 0.75rem;">Hardware ID</div>
+          <div class="fw-bold text-primary">{{ computer.computer_id_code }}</div>
+        </div>
+        <div class="mb-2">
+          <div class="text-muted" style="font-size: 0.75rem;">Location</div>
+          <div class="fw-semibold">{{ computer.wing_name }} • {{ computer.floor_name }} • {{ computer.lab_name }}</div>
+        </div>
+        <div class="mb-2">
+          <div class="text-muted" style="font-size: 0.75rem;">Serial Number</div>
+          <code>{{ computer.serial_number }}</code>
+        </div>
+        <div class="mb-2">
+          <div class="text-muted" style="font-size: 0.75rem;">Make & Model</div>
+          <div>{{ computer.brand }} {{ computer.model }}</div>
+        </div>
+        <div class="mb-2">
+          <div class="text-muted" style="font-size: 0.75rem;">Hardware Specs</div>
+          <div>{{ computer.processor }}</div>
+          <div>{{ computer.ram }} | {{ computer.storage }}</div>
+        </div>
+        <div class="pt-2 border-top">
+          <a href="{{ url_for('inventory.detail', computer_id=computer.id) }}" class="btn btn-outline btn-sm w-100">
+            <i class="fa-solid fa-boxes-stacked me-1"></i> Full Asset Profile
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prior Maintenance History on this Workstation -->
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title"><i class="fa-solid fa-clock-rotate-left text-cyan me-2"></i> Prior PC History</h4>
+      </div>
+      <div class="card-body p-2">
+        {% for h in computer_history %}
+          <div class="p-2 mb-2 rounded border" style="background: var(--bg-surface-secondary); font-size: 0.8rem;">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="fw-bold text-primary">{{ h.complaint_code }}</span>
+              <span class="text-muted" style="font-size: 0.72rem;">{{ h.completed_at }}</span>
+            </div>
+            <div class="text-main fw-medium">{{ h.problem_category }}</div>
+            <div class="text-muted" style="font-size: 0.75rem;">Action: {{ h.action_taken }}</div>
+          </div>
+        {% else %}
+          <div class="p-3 text-center text-muted" style="font-size: 0.825rem;">
+            No prior maintenance logs for this workstation.
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function confirmResolution() {
+    return confirm("Are you sure you want to mark this complaint as Resolved? This will update the workstation's status and add a permanent entry to the maintenance logs.");
+  }
+</script>
+{% endblock %}

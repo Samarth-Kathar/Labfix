@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}College Infrastructure — LabFix{% endblock %}
+{% block breadcrumb %}College Infrastructure{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">College Computing Infrastructure</h1>
+    <p class="page-subtitle">Hierarchical layout across 3 Academic Wings, 9 Floors, and 18 Specialized Computing Labs</p>
+  </div>
+  <div class="d-flex align-items-center gap-2">
+    <a href="{{ url_for('inventory.index') }}" class="btn btn-outline">
+      <i class="fa-solid fa-boxes-stacked"></i> Full Inventory Table
+    </a>
+  </div>
+</div>
+
+<!-- Infrastructure Wings Loop -->
+{% for item in infra_data %}
+  <div class="card mb-4" style="border-left: 4px solid var(--primary);">
+    <div class="card-header" style="background: var(--bg-surface-secondary);">
+      <div class="d-flex align-items-center gap-3">
+        <div class="brand-icon" style="background: linear-gradient(135deg, #3a86ff, #06b6d4);">
+          {{ item.wing.code }}
+        </div>
+        <div>
+          <h3 class="card-title" style="font-size: 1.25rem;">{{ item.wing.name }}</h3>
+          <p class="mb-0 text-muted" style="font-size: 0.85rem;">{{ item.wing.description }}</p>
+        </div>
+      </div>
+      <span class="badge badge-primary">3 Floors • 6 Labs • 120 Workstations</span>
+    </div>
+
+    <div class="card-body">
+      <!-- Floors in this Wing -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+        {% for fl_data in item.floors %}
+          <div class="card" style="box-shadow: none; border-color: var(--border-color); background: var(--bg-surface);">
+            <div class="card-header py-2" style="background: var(--bg-surface-secondary);">
+              <h4 class="card-title" style="font-size: 0.95rem;">
+                <i class="fa-solid fa-layer-group text-primary me-2"></i> {{ fl_data.floor.name }}
+              </h4>
+              <span class="badge badge-secondary">2 Labs</span>
+            </div>
+            
+            <div class="card-body p-3">
+              <div class="d-flex flex-column gap-3">
+                {% for lab in fl_data.labs %}
+                  <div class="p-3 rounded border card-hover" style="background: var(--bg-surface); border-color: var(--border-color) !important; cursor: pointer;" onclick="openLabModal({{ lab.id }}, '{{ lab.name }}', '{{ lab.lab_code }}')">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <div class="fw-bold" style="color: var(--primary); font-size: 1.05rem;">
+                        <i class="fa-solid fa-door-open me-1"></i> {{ lab.name }}
+                      </div>
+                      <span class="badge badge-primary">{{ lab.lab_code }}</span>
+                    </div>
+
+                    <div class="text-muted mb-2" style="font-size: 0.8rem;">
+                      <i class="fa-solid fa-chalkboard-user me-1"></i> In-charge: {{ lab.in_charge_name or 'Faculty Assigned' }}
+                    </div>
+
+                    <!-- Workstation status breakdown bar -->
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="border-color: var(--border-color) !important; font-size: 0.775rem;">
+                      <span class="text-success fw-semibold"><i class="fa-solid fa-circle-check me-1"></i> {{ lab.working_count }} Working</span>
+                      {% if lab.faulty_count > 0 %}
+                        <span class="text-danger fw-semibold"><i class="fa-solid fa-triangle-exclamation me-1"></i> {{ lab.faulty_count }} Faulty</span>
+                      {% endif %}
+                      {% if lab.repaired_count > 0 %}
+                        <span class="text-info fw-semibold"><i class="fa-solid fa-wrench me-1"></i> {{ lab.repaired_count }} Repaired</span>
+                      {% endif %}
+                      <span class="text-muted"><i class="fa-solid fa-desktop me-1"></i> {{ lab.total_pc_count }} PCs</span>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<!-- Dynamic Lab Workstations Modal -->
+<div class="modal-overlay" id="lab-details-modal">
+  <div class="modal-card" style="max-width: 840px;">
+    <div class="card-header">
+      <div>
+        <h4 class="card-title" id="modal-lab-title">Laboratory Workstations</h4>
+        <div class="text-muted" id="modal-lab-subtitle" style="font-size: 0.85rem;"></div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('lab-details-modal')">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div class="card-body p-3">
+      <div id="modal-computers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.75rem;">
+        <!-- Filled dynamically -->
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-between align-items-center">
+      <span class="text-muted" style="font-size: 0.8rem;">Click any workstation for detailed hardware specs & history</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('lab-details-modal')">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openLabModal(labId, labName, labCode) {
+    document.getElementById('modal-lab-title').innerText = `${labName} (${labCode})`;
+    document.getElementById('modal-lab-subtitle').innerText = `Loading inventory...`;
+    const grid = document.getElementById('modal-computers-grid');
+    grid.innerHTML = '<div class="p-4 text-center w-100">Loading workstations...</div>';
+    openModal('lab-details-modal');
+
+    fetch(`/hod/infrastructure/lab/${labId}`)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('modal-lab-subtitle').innerText = `${data.lab.wing_name} • ${data.lab.floor_name} • Capacity: ${data.lab.capacity} Workstations`;
+        let html = '';
+        data.computers.forEach(c => {
+          const statusClass = {
+            'Working': 'badge-success',
+            'Fault Reported': 'badge-danger',
+            'Under Repair': 'badge-warning',
+            'Repaired': 'badge-primary',
+            'Decommissioned': 'badge-secondary'
+          }[c.operational_status] || 'badge-light';
+
+          html += `
+            <a href="/inventory/computer/${c.id}" class="card p-2 text-decoration-none card-hover" style="border: 1px solid var(--border-color); background: var(--bg-surface-secondary);">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-bold" style="font-size: 0.85rem; color: var(--text-main);">${c.pc_number}</span>
+                <span class="badge ${statusClass}" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;">${c.operational_status}</span>
+              </div>
+              <div class="text-muted" style="font-size: 0.72rem;">${c.brand} ${c.model}</div>
+              <div class="text-muted mt-1" style="font-size: 0.68rem; font-family: monospace;">${c.serial_number}</div>
+            </a>
+          `;
+        });
+        grid.innerHTML = html;
+      })
+      .catch(err => {
+        grid.innerHTML = '<div class="text-danger p-3">Failed to load lab workstations.</div>';
+      });
+  }
+</script>
+{% endblock %}

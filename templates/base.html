@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LabFix — Smart Computer Lab Management{% endblock %}</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Application Stylesheets -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar Navigation -->
+    {% include 'components/_sidebar.html' %}
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Navigation Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="sidebar-toggle-btn" class="icon-btn d-lg-none" title="Toggle Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="page-breadcrumb">
+            <span>LabFix</span> / <strong>{% block breadcrumb %}Dashboard{% endblock %}</strong>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Dark / Light Mode Toggle -->
+          <button id="theme-toggle-btn" class="icon-btn" title="Toggle Dark/Light Theme">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+
+          <!-- Notification Bell & Dropdown -->
+          <div class="dropdown-wrapper">
+            <button class="icon-btn dropdown-toggle" id="notification-btn" title="Notifications">
+              <i class="fa-solid fa-bell"></i>
+              <span class="notification-badge" id="notification-badge" style="display: {{ 'block' if unread_notifications_count > 0 else 'none' }};"></span>
+            </button>
+
+            <div class="dropdown-menu">
+              <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="border-color: var(--border-color) !important;">
+                <div class="fw-bold" style="font-size: 0.95rem;">
+                  Notifications (<span id="notification-count">{{ unread_notifications_count }}</span>)
+                </div>
+                <button id="mark-all-read-btn" class="btn btn-outline btn-sm" style="font-size: 0.725rem; padding: 0.2rem 0.5rem;">
+                  Mark all read
+                </button>
+              </div>
+              <div id="notification-list" style="max-height: 340px; overflow-y: auto;">
+                <div class="p-3 text-center text-muted" style="font-size: 0.85rem;">
+                  Loading notifications...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Profile Dropdown -->
+          <div class="d-flex align-items-center gap-2 ps-2 border-start" style="border-color: var(--border-color) !important;">
+            <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.85rem;">
+              {{ current_user.full_name[:1] if current_user else 'U' }}
+            </div>
+            <div class="d-none d-sm-block text-start">
+              <div style="font-size: 0.825rem; font-weight: 700; color: var(--text-main); line-height: 1.2;">
+                {{ current_user.full_name if current_user else 'Guest' }}
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: capitalize;">
+                {{ current_user.role if current_user else '' }}
+              </div>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm ms-2" title="Sign Out">
+              <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-container">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <!-- Core Scripts -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+
+  <!-- Flash Messages Toasts -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            showToast('{{ category|capitalize }}', '{{ message }}', '{{ category }}');
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    });
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

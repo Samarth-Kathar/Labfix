@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block title %}Complaint {{ complaint.complaint_code }} — LabFix{% endblock %}
+{% block breadcrumb %}Ticket Progress Tracking{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <a href="{{ url_for('faculty.my_complaints') }}" class="text-muted" style="font-size: 0.9rem;">
+        <i class="fa-solid fa-arrow-left me-1"></i> Back to My Complaints
+      </a>
+    </div>
+    <h1 class="page-title">Complaint {{ complaint.complaint_code }}</h1>
+    <p class="page-subtitle">{{ complaint.location_breadcrumb }}</p>
+  </div>
+  <div>
+    <span class="badge {{ complaint.status|status_badge_class }}" style="font-size: 0.95rem; padding: 0.4rem 1rem;">
+      Status: {{ complaint.status }}
+    </span>
+  </div>
+</div>
+
+<!-- Status Timeline Stepper -->
+<div class="card mb-4 p-4">
+  <div class="timeline-stepper">
+    <!-- Step 1: Reported -->
+    <div class="timeline-step completed">
+      <div class="step-indicator">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <div class="step-title">Reported</div>
+      <div class="step-time">{{ complaint.reported_at }}</div>
+    </div>
+
+    <!-- Step 2: Accepted -->
+    {% set is_accepted = complaint.status in ['Accepted', 'In Progress', 'Resolved', 'Closed'] %}
+    <div class="timeline-step {{ 'completed' if is_accepted else '' }} {{ 'active' if complaint.status == 'Accepted' else '' }}">
+      <div class="step-indicator">
+        {% if is_accepted %}<i class="fa-solid fa-check"></i>{% else %}2{% endif %}
+      </div>
+      <div class="step-title">Accepted</div>
+      <div class="step-time">
+        {% if complaint.accepted_at %}
+          {{ complaint.accepted_at }}
+        {% else %}
+          Pending Pickup
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Step 3: In Progress -->
+    {% set is_in_progress = complaint.status in ['In Progress', 'Resolved', 'Closed'] %}
+    <div class="timeline-step {{ 'completed' if is_in_progress else '' }} {{ 'active' if complaint.status == 'In Progress' else '' }}">
+      <div class="step-indicator">
+        {% if is_in_progress %}<i class="fa-solid fa-check"></i>{% else %}3{% endif %}
+      </div>
+      <div class="step-title">In Progress</div>
+      <div class="step-time">
+        {% if complaint.status == 'In Progress' %}Active Bench Repair{% elif is_in_progress %}Work Started{% else %}Queued{% endif %}
+      </div>
+    </div>
+
+    <!-- Step 4: Resolved -->
+    {% set is_resolved = complaint.status in ['Resolved', 'Closed'] %}
+    <div class="timeline-step {{ 'completed' if is_resolved else '' }} {{ 'active' if is_resolved else '' }}">
+      <div class="step-indicator">
+        {% if is_resolved %}<i class="fa-solid fa-check-double"></i>{% else %}4{% endif %}
+      </div>
+      <div class="step-title">Resolved</div>
+      <div class="step-time">
+        {% if complaint.resolved_at %}{{ complaint.resolved_at }}{% else %}Awaiting Completion{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 1.5rem;">
+  <!-- Left Side: Problem Details & Location -->
+  <div class="d-flex flex-column gap-3">
+    <!-- Complaint Information -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="fa-solid fa-circle-info text-primary me-2"></i> Issue Details</h3>
+        <span class="badge {{ complaint.priority|priority_badge_class }}">{{ complaint.priority }} Priority</span>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="text-muted mb-1" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Problem Category</div>
+          <div class="fw-bold text-main" style="font-size: 1.1rem;">{{ complaint.problem_category }}</div>
+        </div>
+
+        <div class="mb-3">
+          <div class="text-muted mb-1" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Description</div>
+          <div class="p-3 rounded border" style="background: var(--bg-surface-secondary); line-height: 1.5; font-size: 0.925rem;">
+            {{ complaint.description }}
+          </div>
+        </div>
+
+        {% if complaint.attachment_filename %}
+          <div>
+            <div class="text-muted mb-1" style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">Attached Screenshot</div>
+            <div class="p-2 border rounded" style="background: var(--bg-surface-secondary); display: inline-block;">
+              <a href="{{ url_for('uploaded_file', filename=complaint.attachment_filename) }}" target="_blank">
+                <img src="{{ url_for('uploaded_file', filename=complaint.attachment_filename) }}" alt="Malfunction Screenshot" style="max-height: 250px; border-radius: var(--radius-sm); object-fit: contain;">
+              </a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Resolution Record Card (When Available) -->
+    {% if maintenance %}
+      <div class="card" style="border-left: 4px solid var(--success);">
+        <div class="card-header" style="background: var(--bg-surface-secondary);">
+          <h3 class="card-title text-success"><i class="fa-solid fa-square-check me-2"></i> Technician Resolution Report</h3>
+          <span class="badge badge-success">Completed & Certified</span>
+        </div>
+        <div class="card-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+              <div class="text-muted" style="font-size: 0.775rem;">Diagnosis</div>
+              <div class="fw-semibold text-main">{{ maintenance.diagnosis }}</div>
+            </div>
+            <div>
+              <div class="text-muted" style="font-size: 0.775rem;">Action Taken</div>
+              <div class="fw-semibold text-main">{{ maintenance.action_taken }}</div>
+            </div>
+            <div>
+              <div class="text-muted" style="font-size: 0.775rem;">Parts Replaced</div>
+              <div class="fw-semibold text-main">{{ maintenance.parts_replaced or 'None' }}</div>
+            </div>
+            <div>
+              <div class="text-muted" style="font-size: 0.775rem;">Completion Timestamp</div>
+              <div class="text-main">{{ maintenance.completed_at }}</div>
+            </div>
+          </div>
+
+          <div class="mb-2">
+            <div class="text-muted mb-1" style="font-size: 0.775rem;">Solution Description</div>
+            <div class="p-3 rounded" style="background: var(--bg-surface-secondary); font-size: 0.9rem;">
+              {{ maintenance.solution_description }}
+            </div>
+          </div>
+
+          {% if maintenance.repair_notes %}
+            <div>
+              <div class="text-muted mb-1" style="font-size: 0.775rem;">Technician Notes</div>
+              <div class="text-muted" style="font-size: 0.85rem; font-style: italic;">
+                "{{ maintenance.repair_notes }}"
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Right Side: Location & Technician Card -->
+  <div class="d-flex flex-column gap-3">
+    <!-- Workstation Card -->
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title"><i class="fa-solid fa-desktop text-primary me-2"></i> Workstation Details</h4>
+      </div>
+      <div class="card-body">
+        {% if computer %}
+          <div class="mb-2">
+            <div class="text-muted" style="font-size: 0.75rem;">Workstation Code</div>
+            <div class="fw-bold text-primary" style="font-size: 1.1rem;">{{ computer.computer_id_code }}</div>
+          </div>
+          <div class="mb-2">
+            <div class="text-muted" style="font-size: 0.75rem;">Location</div>
+            <div class="fw-medium text-main">{{ complaint.location_breadcrumb }}</div>
+          </div>
+          <div class="mb-2">
+            <div class="text-muted" style="font-size: 0.75rem;">Hardware Specifications</div>
+            <div style="font-size: 0.85rem;" class="text-main">
+              <div><strong>Brand:</strong> {{ computer.brand }} {{ computer.model }}</div>
+              <div><strong>CPU:</strong> {{ computer.processor }}</div>
+              <div><strong>RAM / SSD:</strong> {{ computer.ram }} / {{ computer.storage }}</div>
+              <div><strong>Serial:</strong> <code>{{ computer.serial_number }}</code></div>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Assigned Technician Card -->
+    <div class="card">
+      <div class="card-header">
+        <h4 class="card-title"><i class="fa-solid fa-user-gear text-cyan me-2"></i> Assigned Technician</h4>
+      </div>
+      <div class="card-body">
+        {% if complaint.technician_name %}
+          <div class="d-flex align-items-center gap-3">
+            <div class="user-avatar" style="background: linear-gradient(135deg, #1e293b, #06b6d4);">
+              {{ complaint.technician_name[:1] }}
+            </div>
+            <div>
+              <div class="fw-bold text-main">{{ complaint.technician_name }}</div>
+              <div class="text-muted" style="font-size: 0.8rem;">Systems Maintenance Engineer</div>
+              <div class="text-muted" style="font-size: 0.75rem;">Status: Assigned & Attending</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center p-3 text-muted">
+            <i class="fa-solid fa-clock mb-2" style="font-size: 1.5rem; opacity: 0.5;"></i>
+            <p class="mb-0" style="font-size: 0.85rem;">Ticket is currently in the dispatch queue awaiting technician claiming.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

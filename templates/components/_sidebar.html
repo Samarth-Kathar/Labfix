@@ -1,0 +1,109 @@
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <a href="/" class="brand-logo">
+      <div class="brand-icon">
+        <i class="fa-solid fa-microchip"></i>
+      </div>
+      <div>
+        <span>LabFix</span>
+        <div style="font-size: 0.65rem; color: #38bdf8; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;">NMIET Pune</div>
+      </div>
+    </a>
+    <span class="role-badge-pill">{{ current_user.role if current_user else 'Guest' }}</span>
+  </div>
+
+  <div class="sidebar-nav">
+    {% if current_user and current_user.role == 'hod' %}
+      <div class="nav-section-title">Control Center</div>
+      <a href="{{ url_for('hod.dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.dashboard' else '' }}">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Overview</span>
+      </a>
+      <a href="{{ url_for('hod.infrastructure') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.infrastructure' else '' }}">
+        <i class="fa-solid fa-network-wired"></i>
+        <span>Infrastructure</span>
+      </a>
+      <a href="{{ url_for('hod.complaints') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.complaints' else '' }}">
+        <i class="fa-solid fa-ticket-simple"></i>
+        <span>All Complaints</span>
+      </a>
+      <a href="{{ url_for('hod.computer_health') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.computer_health' else '' }}">
+        <i class="fa-solid fa-heart-pulse"></i>
+        <span>Computer Health</span>
+      </a>
+      <a href="{{ url_for('hod.technician_monitoring') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.technician_monitoring' else '' }}">
+        <i class="fa-solid fa-user-gear"></i>
+        <span>Technicians</span>
+      </a>
+      <a href="{{ url_for('hod.reports') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.reports' else '' }}">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Reports & Analytics</span>
+      </a>
+
+      <div class="nav-section-title">Hardware Asset Ops</div>
+      <a href="{{ url_for('inventory.index') }}" class="nav-link {{ 'active' if request.blueprint == 'inventory' and request.endpoint == 'inventory.index' else '' }}">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Computer Inventory</span>
+      </a>
+      <a href="{{ url_for('inventory.add') }}" class="nav-link {{ 'active' if request.endpoint == 'inventory.add' else '' }}">
+        <i class="fa-solid fa-plus-circle"></i>
+        <span>Add Computer</span>
+      </a>
+      <a href="{{ url_for('hod.audit_logs') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.audit_logs' else '' }}">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <span>Audit Logs</span>
+      </a>
+
+    {% elif current_user and current_user.role == 'faculty' %}
+      <div class="nav-section-title">Faculty Portal</div>
+      <a href="{{ url_for('faculty.dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'faculty.dashboard' else '' }}">
+        <i class="fa-solid fa-house"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('faculty.report_fault') }}" class="nav-link {{ 'active' if request.endpoint == 'faculty.report_fault' else '' }}">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Report Fault</span>
+      </a>
+      <a href="{{ url_for('faculty.my_complaints') }}" class="nav-link {{ 'active' if request.endpoint == 'faculty.my_complaints' else '' }}">
+        <i class="fa-solid fa-list-check"></i>
+        <span>My Complaints</span>
+      </a>
+
+    {% elif current_user and current_user.role == 'technician' %}
+      <div class="nav-section-title">Technician Workspace</div>
+      <a href="{{ url_for('technician.dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'technician.dashboard' else '' }}">
+        <i class="fa-solid fa-screwdriver-wrench"></i>
+        <span>Complaint Queue</span>
+      </a>
+      <a href="{{ url_for('technician.repair_history') }}" class="nav-link {{ 'active' if request.endpoint == 'technician.repair_history' else '' }}">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Repair History</span>
+      </a>
+
+      <div class="nav-section-title">Hardware Asset Ops</div>
+      <a href="{{ url_for('inventory.index') }}" class="nav-link {{ 'active' if request.blueprint == 'inventory' and request.endpoint == 'inventory.index' else '' }}">
+        <i class="fa-solid fa-boxes-stacked"></i>
+        <span>Computer Inventory</span>
+      </a>
+      <a href="{{ url_for('inventory.add') }}" class="nav-link {{ 'active' if request.endpoint == 'inventory.add' else '' }}">
+        <i class="fa-solid fa-plus-circle"></i>
+        <span>Add Computer</span>
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-profile-mini">
+      <div class="user-avatar">
+        {{ current_user.full_name[:1] if current_user else 'U' }}
+      </div>
+      <div class="user-info-text">
+        <div class="user-name">{{ current_user.full_name if current_user else 'Guest User' }}</div>
+        <div class="user-role-label">{{ current_user.department if current_user else '' }}</div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" title="Logout" style="color: var(--slate-400); font-size: 1.1rem; padding: 4px;" class="ms-auto">
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+      </a>
+    </div>
+  </div>
+</aside>

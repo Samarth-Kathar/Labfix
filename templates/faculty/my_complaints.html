@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}My Complaints — LabFix{% endblock %}
+{% block breadcrumb %}My Fault Tickets{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">My Fault Complaints</h1>
+    <p class="page-subtitle">Historical records and live resolution statuses of all workstations reported by you</p>
+  </div>
+  <a href="{{ url_for('faculty.report_fault') }}" class="btn btn-primary">
+    <i class="fa-solid fa-plus-circle me-1"></i> Report New Fault
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i class="fa-solid fa-list-check text-primary me-2"></i> Submitted Complaints
+    </div>
+    <span class="badge badge-secondary">{{ complaints|length }} Total</span>
+  </div>
+
+  <div class="card-body p-0">
+    {% if complaints %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Ticket ID</th>
+              <th>Location</th>
+              <th>Problem Category</th>
+              <th>Priority</th>
+              <th>Reported On</th>
+              <th>Technician</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in complaints %}
+              <tr>
+                <td class="fw-bold" style="font-family: monospace; color: var(--primary);">
+                  {{ c.complaint_code }}
+                </td>
+                <td>
+                  <div class="fw-semibold">{{ c.lab_code }} • {{ c.pc_number }}</div>
+                  <div class="text-muted" style="font-size: 0.75rem;">{{ c.wing_name }} • {{ c.floor_name }}</div>
+                </td>
+                <td>
+                  <div class="fw-medium">{{ c.problem_category }}</div>
+                </td>
+                <td>
+                  <span class="badge {{ c.priority|priority_badge_class }}">{{ c.priority }}</span>
+                </td>
+                <td class="text-muted" style="font-size: 0.825rem;">
+                  {{ c.reported_at }}
+                </td>
+                <td>
+                  {% if c.technician_name %}
+                    <span class="badge badge-primary"><i class="fa-solid fa-user-gear me-1"></i> {{ c.technician_name }}</span>
+                  {% else %}
+                    <span class="badge badge-secondary">Pending Tech</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge {{ c.status|status_badge_class }}">{{ c.status }}</span>
+                </td>
+                <td>
+                  <a href="{{ url_for('faculty.complaint_detail', code=c.complaint_code) }}" class="btn btn-outline btn-sm">
+                    <i class="fa-solid fa-timeline"></i> Track
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="p-5 text-center text-muted">
+        <i class="fa-solid fa-clipboard-check text-success mb-2" style="font-size: 2.5rem;"></i>
+        <h4>No Complaints Found</h4>
+        <p>You haven't submitted any computer tickets yet.</p>
+        <a href="{{ url_for('faculty.report_fault') }}" class="btn btn-primary mt-2">
+          Report Fault
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

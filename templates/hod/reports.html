@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% block title %}Reports & Analytics — LabFix{% endblock %}
+{% block breadcrumb %}Institutional Analytics & SLA Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Hardware Reliability & SLA Analytics</h1>
+    <p class="page-subtitle">Trend analyses, fault distribution across academic wings, and repair turnaround metrics</p>
+  </div>
+</div>
+
+<!-- Key Performance Indicators (KPIs) -->
+<div class="stats-grid mb-4">
+  <div class="stat-card stat-blue">
+    <div>
+      <div class="stat-label">Total Complaints Logged</div>
+      <div class="stat-value animate-counter" data-target="{{ total_complaints }}">{{ total_complaints }}</div>
+      <div class="stat-subtext">Cumulative historical tickets</div>
+    </div>
+    <div class="stat-icon blue"><i class="fa-solid fa-ticket"></i></div>
+  </div>
+
+  <div class="stat-card stat-green">
+    <div>
+      <div class="stat-label">Repair Completion Rate</div>
+      <div class="stat-value">{{ completion_rate }}%</div>
+      <div class="stat-subtext text-success"><i class="fa-solid fa-arrow-trend-up me-1"></i> Target SLA Met</div>
+    </div>
+    <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+  </div>
+
+  <div class="stat-card stat-cyan">
+    <div>
+      <div class="stat-label">Avg Repair Turnaround</div>
+      <div class="stat-value">{{ avg_repair_hours }} hrs</div>
+      <div class="stat-subtext text-cyan"><i class="fa-solid fa-clock-fast me-1"></i> Under 4h SLA Target</div>
+    </div>
+    <div class="stat-icon cyan"><i class="fa-solid fa-stopwatch"></i></div>
+  </div>
+
+  <div class="stat-card stat-amber">
+    <div>
+      <div class="stat-label">Resolved Tickets</div>
+      <div class="stat-value animate-counter" data-target="{{ resolved_complaints }}">{{ resolved_complaints }}</div>
+      <div class="stat-subtext">Returned to lab duty</div>
+    </div>
+    <div class="stat-icon amber"><i class="fa-solid fa-clipboard-check"></i></div>
+  </div>
+</div>
+
+<!-- Chart Row 1: Complaints by Wing & Category Breakdown -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+  <!-- Complaints by Wing -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fa-solid fa-building-columns text-primary me-2"></i> Complaints by Academic Wing
+      </h3>
+    </div>
+    <div class="card-body">
+      <div style="height: 280px; position: relative;">
+        <canvas id="wingChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complaints by Fault Category -->
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
+        <i class="fa-solid fa-pie-chart text-cyan me-2"></i> Problem Categories Breakdown
+      </h3>
+    </div>
+    <div class="card-body">
+      <div style="height: 280px; position: relative;">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart Row 2: Downtime / Monthly Trend -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h3 class="card-title">
+      <i class="fa-solid fa-chart-line text-primary me-2"></i> Monthly Hardware Downtime & Fault Trends
+    </h3>
+    <span class="badge badge-primary">6-Month Trend</span>
+  </div>
+  <div class="card-body">
+    <div style="height: 300px; position: relative;">
+      <canvas id="trendChart"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // 1. Complaints by Wing Bar Chart
+  const wingCtx = document.getElementById('wingChart').getContext('2d');
+  new Chart(wingCtx, {
+    type: 'bar',
+    data: {
+      labels: [{% for w in complaints_by_wing %}'{{ w.wing_name }}',{% endfor %}],
+      datasets: [{
+        label: 'Reported Complaints',
+        data: [{% for w in complaints_by_wing %}{{ w.count }},{% endfor %}],
+        backgroundColor: ['rgba(58, 134, 255, 0.75)', 'rgba(6, 182, 212, 0.75)', 'rgba(16, 185, 129, 0.75)'],
+        borderColor: ['#3a86ff', '#06b6d4', '#10b981'],
+        borderWidth: 1.5,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  });
+
+  // 2. Complaints by Category Pie Chart
+  const catCtx = document.getElementById('categoryChart').getContext('2d');
+  new Chart(catCtx, {
+    type: 'pie',
+    data: {
+      labels: [{% for c in complaints_by_cat %}'{{ c.problem_category }}',{% endfor %}],
+      datasets: [{
+        data: [{% for c in complaints_by_cat %}{{ c.count }},{% endfor %}],
+        backgroundColor: [
+          '#3a86ff', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#64748b'
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' }
+      }
+    }
+  });
+
+  // 3. Monthly Trend Line Chart
+  const trendCtx = document.getElementById('trendChart').getContext('2d');
+  new Chart(trendCtx, {
+    type: 'line',
+    data: {
+      labels: [{% for m in monthly_trend %}'{{ m.month }}',{% endfor %}],
+      datasets: [{
+        label: 'Reported Fault Incidents',
+        data: [{% for m in monthly_trend %}{{ m.count }},{% endfor %}],
+        borderColor: '#3a86ff',
+        backgroundColor: 'rgba(58, 134, 255, 0.1)',
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: '#06b6d4',
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } }
+      }
+    }
+  });
+</script>
+{% endblock %}
