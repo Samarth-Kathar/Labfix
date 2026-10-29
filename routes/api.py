@@ -86,3 +86,57 @@ def mark_all_notifications_read():
 def mark_single_notification_read(notification_id):
     execute_db("UPDATE notifications SET is_read = 1 WHERE id = ?", (notification_id,))
     return jsonify({'success': True})
+
+@api_bp.route('/sms/logs')
+@login_required
+def get_sms_logs():
+    user = get_current_user()
+    from models import SMSLog
+    if user.role == 'technician':
+        logs = SMSLog.get_for_user(user.id, limit=20)
+    else:
+        logs = SMSLog.get_recent(limit=30)
+    stats = SMSLog.get_stats()
+    return jsonify({
+        'success': True,
+        'stats': stats,
+        'logs': [l.to_dict() for l in logs]
+    })
+
+@api_bp.route('/sms/test', methods=['POST'])
+@login_required
+def send_test_sms():
+    data = request.get_json() or {}
+    phone = data.get('phone', '').strip()
+    user = get_current_user()
+    
+    if not phone:
+        phone = user.phone if user and user.phone else '+91 98765 43210'
+
+    from services.sms_service import SMSService
+    msg = (
+        f"[LABFIX SYSTEM] 📲 SMS Gateway Verification Test!\n"
+        f"Technician: {user.full_name}\n"
+        f"Status: SMS Alert Dispatcher Operational.\n"
+        f"Time: {request.environ.get('HTTP_DATE', 'Just Now')}\n"
+        f"LabFix Smart Lab Management System"
+    )
+    res = SMSService.send_sms(
+        to_phone=phone,
+        message=msg,
+        recipient_name=user.full_name,
+        recipient_user_id=user.id
+    )
+    return jsonify(res)
+
+@api_bp.route('/technician/update-phone', methods=['POST'])
+@login_required
+def update_technician_phone():
+    user = get_current_user()
+    data = request.get_json() or {}
+    new_phone = data.get('phone', '').strip()
+    if not new_phone:
+        return jsonify({'success': False, 'error': 'Phone number cannot be empty.'}), 400
+    
+    user.update_phone(new_phone)
+    return jsonify({'success': True, 'phone': new_phone, 'message': 'Phone number updated successfully.'})

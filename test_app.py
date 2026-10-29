@@ -244,12 +244,59 @@ class LabFixTestCase(unittest.TestCase):
             '/hod/technicians',
             '/hod/reports',
             '/hod/audit-logs',
+            '/hod/sms-logs',
             '/inventory/'
         ]
         for page in pages:
             res = self.client.get(page)
             self.assertEqual(res.status_code, 200, f"Page {page} failed to render: {res.status_code}")
 
+        self.logout()
+
+    def test_07_sms_alert_dispatch(self):
+        """Test SMS Alert system: Phone update, test dispatch, faculty trigger, and audit views."""
+        # 1. Technician updates their mobile number
+        self.login('tech', 'Password@123', 'technician')
+        res = self.client.post('/api/technician/update-phone', 
+                               data=json.dumps({'phone': '+91 9876543210'}),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(json.loads(res.data)['success'])
+
+        # 2. Technician triggers a test SMS
+        res = self.client.post('/api/sms/test',
+                               data=json.dumps({'phone': '+91 9876543210'}),
+                               content_type='application/json')
+        self.assertEqual(res.status_code, 200)
+        self.assertTrue(json.loads(res.data)['success'])
+
+        # 3. Technician views SMS alerts page
+        res = self.client.get('/technician/sms-alerts')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(b'Technician Mobile SMS Alerts', res.data)
+        self.logout()
+
+        # 4. Faculty reports fault -> automated SMS triggered to technicians
+        self.login('faculty', 'Password@123', 'faculty')
+        comp = Computer.find_by_code('COMP-B1-01-PC-01')
+        self.assertIsNotNone(comp)
+
+        res = self.client.post('/faculty/report-fault', data={
+            'computer_id': comp.id,
+            'problem_category': 'Internet Problem',
+            'priority': 'Critical',
+            'description': 'Entire switch rack disconnected in Lab B1-01 during practical exam.'
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(b'Automated SMS Alert Dispatched', res.data)
+        self.logout()
+
+        # 5. HOD verifies SMS dispatch in audit trail
+        self.login('hod', 'Password@123', 'hod')
+        res = self.client.get('/hod/sms-logs')
+        self.assertEqual(res.status_code, 200)
+        self.assertIn(b'Technician SMS Dispatch & Audit Trail', res.data)
+        self.assertIn(b'Internet Problem', res.data)
         self.logout()
 
 if __name__ == '__main__':

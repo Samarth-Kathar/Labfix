@@ -13,6 +13,7 @@
 - **Technician Concurrency Protection**: Atomic database checks preventing two technicians from inadvertently claiming the same complaint simultaneously.
 - **Smart Asset Replacement**: Workstation replacement preserves the physical laboratory slot while archiving the retired machine and maintaining complete historical maintenance records.
 - **Interactive Analytics**: Real-time Chart.js visualisations for workstation availability, complaints by wing, problem categories, and monthly downtime trends.
+- **Real-World SMS Malfunction Alert System**: Automated SMS alert dispatch to on-duty lab technicians whenever faculty report a fault. Includes real Twilio and Fast2SMS gateway integrations, mobile phone number configuration, test alert triggers, and an interactive smartphone SMS terminal.
 - **Theme Personalisation**: Professional dark navy & electric blue palette with instant light/dark mode toggling persisted in `localStorage`.
 - **In-App Notification Center**: Role-targeted notifications with unread badge indicators and background polling.
 

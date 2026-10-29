@@ -65,6 +65,12 @@ class User:
     def is_technician(self):
         return self.role == 'technician'
 
+    def update_phone(self, new_phone):
+        clean_phone = new_phone.strip()
+        execute_db("UPDATE users SET phone = ? WHERE id = ?", (clean_phone, self.id))
+        self.phone = clean_phone
+        return True
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -624,7 +630,17 @@ class Complaint:
             details=f"Raised {code} for computer #{computer_id} (Category: {problem_category}, Priority: {priority})"
         )
 
-        return cls.find_by_id(last_id)
+        complaint_instance = cls.find_by_id(last_id)
+
+        # Dispatch Real-World SMS Alert to Technicians immediately
+        try:
+            from services.sms_service import SMSService
+            faculty_user = User.find_by_id(faculty_id)
+            SMSService.dispatch_fault_alert_to_technicians(complaint_instance, faculty_user)
+        except Exception as sms_err:
+            print(f"[LabFix SMS Notice] Technician SMS alert dispatch: {sms_err}")
+
+        return complaint_instance
 
     def accept_by_technician(self, technician_id):
         """
@@ -919,3 +935,89 @@ class AuditLog:
             LIMIT ?
         '''
         return query_db(sql, (limit,))
+
+
+class SMSLog:
+    """Represents an SMS Alert dispatch record."""
+    def __init__(self, id, complaint_id, recipient_user_id, recipient_name, recipient_phone,
+                 message, gateway_provider, status, response_data, sent_at, complaint_code=None):
+        self.id = id
+        self.complaint_id = complaint_id
+        self.recipient_user_id = recipient_user_id
+        self.recipient_name = recipient_name
+        self.recipient_phone = recipient_phone
+        self.message = message
+        self.gateway_provider = gateway_provider
+        self.status = status
+        self.response_data = response_data
+        self.sent_at = sent_at
+        self.complaint_code = complaint_code
+
+    @classmethod
+    def from_row(cls, row):
+        if not row:
+            return None
+        keys = row.keys()
+        return cls(
+            id=row['id'],
+            complaint_id=row['complaint_id'],
+            recipient_user_id=row['recipient_user_id'],
+            recipient_name=row['recipient_name'],
+            recipient_phone=row['recipient_phone'],
+            message=row['message'],
+            gateway_provider=row['gateway_provider'],
+            status=row['status'],
+            response_data=row['response_data'],
+            sent_at=row['sent_at'],
+            complaint_code=row['complaint_code'] if 'complaint_code' in keys else None
+        )
+
+    @classmethod
+    def get_recent(cls, limit=50):
+        sql = '''
+            SELECT s.*, c.complaint_code
+            FROM sms_logs s
+            LEFT JOIN complaints c ON s.complaint_id = c.id
+            ORDER BY s.sent_at DESC, s.id DESC
+            LIMIT ?
+        '''
+        rows = query_db(sql, (limit,))
+        return [cls.from_row(r) for r in rows]
+
+    @classmethod
+    def get_for_user(cls, user_id, limit=30):
+        sql = '''
+            SELECT s.*, c.complaint_code
+            FROM sms_logs s
+            LEFT JOIN complaints c ON s.complaint_id = c.id
+            WHERE s.recipient_user_id = ?
+            ORDER BY s.sent_at DESC, s.id DESC
+            LIMIT ?
+        '''
+        rows = query_db(sql, (user_id, limit))
+        return [cls.from_row(r) for r in rows]
+
+    @classmethod
+    def get_stats(cls):
+        total = query_db("SELECT COUNT(*) as c FROM sms_logs", one=True)['c']
+        delivered = query_db("SELECT COUNT(*) as c FROM sms_logs WHERE status IN ('DELIVERED', 'SENT')", one=True)['c']
+        failed = query_db("SELECT COUNT(*) as c FROM sms_logs WHERE status = 'FAILED'", one=True)['c']
+        return {
+            'total': total,
+            'delivered': delivered,
+            'failed': failed
+        }
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'complaint_id': self.complaint_id,
+            'complaint_code': self.complaint_code,
+            'recipient_name': self.recipient_name,
+            'recipient_phone': self.recipient_phone,
+            'message': self.message,
+            'gateway_provider': self.gateway_provider,
+            'status': self.status,
+            'response_data': self.response_data,
+            'sent_at': str(self.sent_at)
+        }

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, jsonify
 from database import query_db
-from models import Computer, Complaint, User, AuditLog, MaintenanceRecord
+from models import Computer, Complaint, User, AuditLog, MaintenanceRecord, SMSLog
 from services.auth_service import login_required, role_required, get_current_user
 
 hod_bp = Blueprint('hod', __name__, url_prefix='/hod')
@@ -327,3 +327,13 @@ def audit_logs():
     user = get_current_user()
     logs = AuditLog.get_recent(limit=100)
     return render_template('hod/audit_logs.html', user=user, logs=logs)
+
+
+@hod_bp.route('/sms-logs')
+@login_required
+@role_required('hod')
+def sms_logs():
+    user = get_current_user()
+    logs = SMSLog.get_recent(limit=100)
+    stats = SMSLog.get_stats()
+    return render_template('hod/sms_logs.html', user=user, logs=logs, stats=stats)

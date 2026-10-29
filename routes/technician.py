@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from models import Complaint, Computer, User, MaintenanceRecord
+from models import Complaint, Computer, User, MaintenanceRecord, SMSLog
 from services.auth_service import login_required, role_required, get_current_user
 
 technician_bp = Blueprint('technician', __name__, url_prefix='/technician')
@@ -40,6 +40,10 @@ def dashboard():
     # Resolved today
     resolved_today = sum(1 for c in all_unfiltered if c.assigned_technician_id == user.id and c.status == 'Resolved' and c.resolved_at and c.resolved_at.startswith(today_str))
 
+    # Fetch technician's received SMS alerts
+    sms_logs = SMSLog.get_for_user(user.id, limit=15)
+    sms_stats = SMSLog.get_stats()
+
     return render_template('technician/dashboard.html',
                            user=user,
                            complaints=all_complaints,
@@ -48,12 +52,24 @@ def dashboard():
                            my_in_progress=my_in_progress,
                            high_priority=high_priority,
                            resolved_today=resolved_today,
+                           sms_logs=sms_logs,
+                           sms_stats=sms_stats,
                            current_status=status,
                            current_priority=priority,
                            current_wing=wing,
                            current_floor=floor,
                            current_lab=lab,
                            current_search=search)
+
+
+@technician_bp.route('/sms-alerts')
+@login_required
+@role_required('technician')
+def sms_alerts():
+    user = get_current_user()
+    sms_logs = SMSLog.get_for_user(user.id, limit=50)
+    sms_stats = SMSLog.get_stats()
+    return render_template('technician/sms_alerts.html', user=user, sms_logs=sms_logs, sms_stats=sms_stats)
 
 
 @technician_bp.route('/complaint/<string:code>')

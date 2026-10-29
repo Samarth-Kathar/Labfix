@@ -203,6 +203,21 @@ def init_db():
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
     );
+
+    CREATE TABLE IF NOT EXISTS sms_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        complaint_id INTEGER,
+        recipient_user_id INTEGER,
+        recipient_name TEXT NOT NULL,
+        recipient_phone TEXT NOT NULL,
+        message TEXT NOT NULL,
+        gateway_provider TEXT DEFAULT 'SIMULATED',
+        status TEXT NOT NULL CHECK(status IN ('SENT', 'DELIVERED', 'FAILED', 'SIMULATED')),
+        response_data TEXT DEFAULT '',
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (complaint_id) REFERENCES complaints (id) ON DELETE SET NULL,
+        FOREIGN KEY (recipient_user_id) REFERENCES users (id) ON DELETE CASCADE
+    );
     ''')
 
     db.commit()

@@ -53,6 +53,10 @@
         <i class="fa-solid fa-clipboard-list"></i>
         <span>Audit Logs</span>
       </a>
+      <a href="{{ url_for('hod.sms_logs') }}" class="nav-link {{ 'active' if request.endpoint == 'hod.sms_logs' else '' }}">
+        <i class="fa-solid fa-comment-sms"></i>
+        <span>SMS Dispatch Logs</span>
+      </a>
 
     {% elif current_user and current_user.role == 'faculty' %}
       <div class="nav-section-title">Faculty Portal</div>
@@ -74,6 +78,10 @@
       <a href="{{ url_for('technician.dashboard') }}" class="nav-link {{ 'active' if request.endpoint == 'technician.dashboard' else '' }}">
         <i class="fa-solid fa-screwdriver-wrench"></i>
         <span>Complaint Queue</span>
+      </a>
+      <a href="{{ url_for('technician.sms_alerts') }}" class="nav-link {{ 'active' if request.endpoint == 'technician.sms_alerts' else '' }}">
+        <i class="fa-solid fa-comment-sms"></i>
+        <span>SMS Alerts & Phone</span>
       </a>
       <a href="{{ url_for('technician.repair_history') }}" class="nav-link {{ 'active' if request.endpoint == 'technician.repair_history' else '' }}">
         <i class="fa-solid fa-clock-rotate-left"></i>
