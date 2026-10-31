@@ -12,18 +12,24 @@ def get_db():
         if 'db' not in g:
             g.db = sqlite3.connect(
                 Config.DATABASE,
-                timeout=10.0
+                timeout=30.0,
+                check_same_thread=False
             )
             g.db.row_factory = sqlite3.Row
             g.db.execute("PRAGMA foreign_keys = ON")
+            g.db.execute("PRAGMA journal_mode = WAL")
+            g.db.execute("PRAGMA busy_timeout = 30000")
         return g.db
     else:
         conn = sqlite3.connect(
             Config.DATABASE,
-            timeout=10.0
+            timeout=30.0,
+            check_same_thread=False
         )
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys = ON")
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA busy_timeout = 30000")
         return conn
 
 def close_db(e=None):
@@ -54,12 +60,16 @@ def execute_db(query, args=(), commit=True):
 
 def init_db():
     """Initializes schema and seeds baseline college data and demo accounts."""
-    os.makedirs(os.path.dirname(Config.DATABASE), exist_ok=True)
+    db_dir = os.path.dirname(Config.DATABASE)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
 
-    db = sqlite3.connect(Config.DATABASE)
+    db = sqlite3.connect(Config.DATABASE, timeout=30.0, check_same_thread=False)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
+    db.execute("PRAGMA journal_mode = WAL")
+    db.execute("PRAGMA busy_timeout = 30000")
     cursor = db.cursor()
 
     # Create tables
@@ -247,10 +257,14 @@ def seed_initial_data(db):
         VALUES (?, ?, ?, ?, ?, ?, ?)
     ''', users_data)
 
-    faculty1_id = 2
-    faculty2_id = 3
-    tech1_id = 4
-    tech2_id = 5
+    fac1 = cursor.execute("SELECT id FROM users WHERE username = 'faculty'").fetchone()
+    fac2 = cursor.execute("SELECT id FROM users WHERE username = 'faculty2'").fetchone()
+    t1 = cursor.execute("SELECT id FROM users WHERE username = 'tech'").fetchone()
+    t2 = cursor.execute("SELECT id FROM users WHERE username = 'tech2'").fetchone()
+    faculty1_id = fac1['id'] if fac1 else 2
+    faculty2_id = fac2['id'] if fac2 else 3
+    tech1_id = t1['id'] if t1 else 4
+    tech2_id = t2['id'] if t2 else 5
 
     # 2. Seed Wings
     wings_data = [

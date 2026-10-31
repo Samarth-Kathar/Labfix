@@ -61,10 +61,16 @@ def login():
 
         flash(f'Welcome back, {user.full_name}!', 'success')
 
-        # Check for next url
+        # Check for next url (safe relative redirection)
         next_page = request.args.get('next')
-        if next_page and next_page.startswith('/'):
-            return redirect(next_page)
+        if next_page:
+            from urllib.parse import urlsplit
+            parsed = urlsplit(next_page)
+            if not parsed.netloc and parsed.path.startswith('/'):
+                return redirect(next_page)
+            elif parsed.netloc == request.host and parsed.path.startswith('/'):
+                target = parsed.path + ('?' + parsed.query if parsed.query else '')
+                return redirect(target)
 
         # Redirect according to role
         if user.role == 'hod':

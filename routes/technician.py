@@ -38,7 +38,7 @@ def dashboard():
     high_priority = sum(1 for c in all_unfiltered if c.priority in ('High', 'Critical') and c.status in ('Pending', 'Accepted', 'In Progress'))
     
     # Resolved today
-    resolved_today = sum(1 for c in all_unfiltered if c.assigned_technician_id == user.id and c.status == 'Resolved' and c.resolved_at and c.resolved_at.startswith(today_str))
+    resolved_today = sum(1 for c in all_unfiltered if c.assigned_technician_id == user.id and c.status == 'Resolved' and c.resolved_at and str(c.resolved_at).startswith(today_str))
 
     # Fetch technician's received SMS alerts
     sms_logs = SMSLog.get_for_user(user.id, limit=15)

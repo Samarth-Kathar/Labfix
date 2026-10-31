@@ -2,5 +2,14 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.env
+.env
+.venv/
+env/
+venv/
 .vscode/
 .idea/
+
+# Testing & temporary SQLite files
+test_*.db
+*.db-shm
+*.db-wal

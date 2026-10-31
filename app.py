@@ -18,6 +18,10 @@ def create_app(config_class=Config):
     # Ensure upload directory exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+    # Ensure database schema is initialized and seeded (for WSGI/Gunicorn and local runs)
+    with app.app_context():
+        init_db()
+
     # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(hod_bp)
@@ -107,15 +111,14 @@ def create_app(config_class=Config):
 app = create_app()
 
 if __name__ == '__main__':
-    with app.app_context():
-        init_db()
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1')
     print("=" * 60)
     print("  LABFIX: Smart Computer Lab Management System")
-    print("  Server running on http://127.0.0.1:5000")
-    print("  Network address:  http://172.17.115.66:5000")
+    print(f"  Server running on http://127.0.0.1:{port}")
     print("  Default credentials:")
     print("    HOD:        hod / Password@123")
     print("    Faculty:    faculty / Password@123")
     print("    Technician: tech / Password@123")
     print("=" * 60)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=debug)

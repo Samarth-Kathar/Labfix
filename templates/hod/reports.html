@@ -103,7 +103,7 @@
   new Chart(wingCtx, {
     type: 'bar',
     data: {
-      labels: [{% for w in complaints_by_wing %}'{{ w.wing_name }}',{% endfor %}],
+      labels: [{% for w in complaints_by_wing %}{{ w.wing_name|tojson }},{% endfor %}],
       datasets: [{
         label: 'Reported Complaints',
         data: [{% for w in complaints_by_wing %}{{ w.count }},{% endfor %}],
@@ -128,7 +128,7 @@
   new Chart(catCtx, {
     type: 'pie',
     data: {
-      labels: [{% for c in complaints_by_cat %}'{{ c.problem_category }}',{% endfor %}],
+      labels: [{% for c in complaints_by_cat %}{{ c.problem_category|tojson }},{% endfor %}],
       datasets: [{
         data: [{% for c in complaints_by_cat %}{{ c.count }},{% endfor %}],
         backgroundColor: [
@@ -150,7 +150,7 @@
   new Chart(trendCtx, {
     type: 'line',
     data: {
-      labels: [{% for m in monthly_trend %}'{{ m.month }}',{% endfor %}],
+      labels: [{% for m in monthly_trend %}{{ m.month|tojson }},{% endfor %}],
       datasets: [{
         label: 'Reported Fault Incidents',
         data: [{% for m in monthly_trend %}{{ m.count }},{% endfor %}],

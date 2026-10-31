@@ -4,10 +4,13 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'labfix-super-secret-key-prod-2026')
-    DATABASE = os.path.join(BASE_DIR, 'labfix.db')
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+    DATABASE = os.environ.get('DATABASE_PATH', os.path.join(BASE_DIR, 'labfix.db'))
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', os.path.join(BASE_DIR, 'uploads'))
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max image upload
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+    # Application Base URL (used for generated links and SMS alert dispatch)
+    APP_URL = os.environ.get('APP_URL', 'http://localhost:5000')
 
     # Real-World SMS Alert Gateway Configuration
     # Supported: TWILIO, FAST2SMS, or SIMULATED (auto-detected if credentials provided)

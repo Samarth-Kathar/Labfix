@@ -473,7 +473,11 @@ class Complaint:
     def generate_next_code():
         row = query_db("SELECT MAX(id) as max_id FROM complaints", one=True)
         next_num = (row['max_id'] or 0) + 1
-        return f"LF-{next_num:04d}"
+        code = f"LF-{next_num:04d}"
+        while query_db("SELECT id FROM complaints WHERE complaint_code = ?", (code,), one=True):
+            next_num += 1
+            code = f"LF-{next_num:04d}"
+        return code
 
     @classmethod
     def find_by_id(cls, complaint_id):

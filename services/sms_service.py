@@ -188,6 +188,7 @@ class SMSService:
         if not location_str:
             location_str = f"{complaint.lab_code or 'Lab'} - {complaint.pc_number or 'PC'}"
 
+        app_url = getattr(Config, 'APP_URL', 'http://localhost:5000').rstrip('/')
         sms_body = (
             f"[LABFIX ALERT] 🚨 MALFUNCTION REPORTED!\n"
             f"Ticket: {complaint.complaint_code} ({complaint.priority} Priority)\n"
@@ -195,7 +196,7 @@ class SMSService:
             f"Issue: {complaint.problem_category}\n"
             f"Faculty: {faculty_name}\n"
             f"Notes: {complaint.description[:90]}...\n"
-            f"Claim ticket immediately at: http://localhost:5000/technician/dashboard"
+            f"Claim ticket: {app_url}/technician/dashboard"
         )
 
         dispatches = []
