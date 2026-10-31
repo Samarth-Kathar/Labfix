@@ -1,0 +1,8 @@
+{
+  "name": "LabFix",
+  "description": "Smart Computer Lab Management & Hardware Fault Tracking System for NMIET Pune college computing laboratories.",
+  "version": "1.0.0",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
