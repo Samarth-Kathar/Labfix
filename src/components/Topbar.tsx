@@ -97,8 +97,7 @@ export const Topbar: React.FC<TopbarProps> = ({ setMobileOpen }) => {
     <header className="topbar">
       <div className="topbar-left">
         <button
-          className="icon-btn"
-          style={{ display: 'none' }}
+          className="icon-btn d-mobile-toggle"
           onClick={() => setMobileOpen((prev) => !prev)}
           title="Toggle Navigation"
         >
@@ -119,7 +118,7 @@ export const Topbar: React.FC<TopbarProps> = ({ setMobileOpen }) => {
             style={{ fontSize: '0.825rem' }}
           >
             <i className="fa-solid fa-users-gear text-primary"></i>
-            <span>Switch User: <strong>{currentUser.username}</strong></span>
+            <span className="user-switch-label">Switch: <strong>{currentUser.username}</strong></span>
             <i className="fa-solid fa-chevron-down" style={{ fontSize: '0.7rem' }}></i>
           </button>
 

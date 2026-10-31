@@ -116,7 +116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [currentView, setCurrentView] = useState<string>('overview');
+  const [currentView, setCurrentView] = useState<string>('login');
   const [selectedComplaintCode, setSelectedComplaintCode] = useState<string | null>(null);
   const [selectedComputerId, setSelectedComputerId] = useState<number | null>(null);
 
@@ -126,11 +126,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_USERS;
   });
 
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem(`${STORAGE_KEY}_current_user`);
-    if (saved) return JSON.parse(saved);
-    return users.find((u) => u.role === 'hod') || users[0];
-  });
+  // Always start on sign-in page first before redirecting to dashboard
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [wings] = useState<Wing[]>(INITIAL_WINGS);
 
@@ -880,7 +877,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetToDemoDefaults = () => {
     localStorage.clear();
     setUsers(INITIAL_USERS);
-    setCurrentUser(INITIAL_USERS[0]);
+    setCurrentUser(null);
+    setCurrentView('login');
     const { floors: f, laboratories: l } = generateInitialFloorsAndLabs();
     const c = generateInitialComputers(INITIAL_WINGS, f, l);
     // Apply demo statuses

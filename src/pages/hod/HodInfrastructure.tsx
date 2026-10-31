@@ -31,7 +31,7 @@ export const HodInfrastructure: React.FC = () => {
       </div>
 
       {/* Wing Selector Tabs */}
-      <div className="role-tabs mb-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="role-tabs responsive-wing-tabs mb-4">
         {wings.map((w) => {
           const wingFloorIds = floors.filter((f) => f.wing_id === w.id).map((f) => f.id);
           const wingLabs = laboratories.filter((l) => wingFloorIds.includes(l.floor_id));

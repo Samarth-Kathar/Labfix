@@ -162,7 +162,7 @@ export const TechDashboard: React.FC<TechDashboardProps> = ({
       )}
 
       {/* Queue Tabs & Filters */}
-      <div className="role-tabs mb-3" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+      <div className="role-tabs responsive-queue-tabs mb-3">
         <div
           className={`role-tab ${activeTab === 'all' ? 'active' : ''}`}
           onClick={() => setActiveTab('all')}

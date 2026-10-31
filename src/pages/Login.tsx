@@ -60,6 +60,7 @@ export const Login: React.FC = () => {
 
           {/* Campus Image Showcase Card */}
           <div
+            className="hero-campus-card"
             style={{
               marginTop: '1.75rem',
               borderRadius: 'var(--radius-lg)',
@@ -120,6 +121,7 @@ export const Login: React.FC = () => {
         <div className="auth-card">
           {/* Top Campus Card Banner */}
           <div
+            className="form-campus-card"
             style={{
               marginBottom: '1.5rem',
               borderRadius: 'var(--radius-md)',

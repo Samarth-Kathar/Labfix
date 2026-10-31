@@ -45,7 +45,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ mobileOpen, setMobileOpen }) =
             </div>
           </div>
         </div>
-        <span className="role-badge-pill">{currentUser.role}</span>
+        <div className="d-flex align-items-center gap-2">
+          <span className="role-badge-pill">{currentUser.role}</span>
+          <button
+            className="icon-btn d-mobile-close"
+            onClick={() => setMobileOpen(false)}
+            title="Close Menu"
+            style={{
+              width: '32px',
+              height: '32px',
+              border: 'none',
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: '#ffffff',
+              borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+            }}
+          >
+            <i className="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
 
       <div className="sidebar-nav">

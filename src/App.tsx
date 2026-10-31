@@ -124,6 +124,13 @@ export const AppContent: React.FC = () => {
     <div className="dashboard-layout">
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
+      {mobileOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       <div className="main-wrapper">
         <Topbar setMobileOpen={setMobileOpen} />
         {renderCurrentView()}
