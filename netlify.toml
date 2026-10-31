@@ -1,0 +1,5 @@
+# LabFix is a Python (Flask + SQLite) app and runs on a Python host (see render.yaml).
+# Netlify only serves a static landing page that points visitors to the live app.
+[build]
+  publish = "netlify-site"
+  command = ""
